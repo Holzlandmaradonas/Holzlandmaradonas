@@ -54,7 +54,6 @@ header {
   margin-bottom: 10px;
   border-radius: 10px;
 }
-
 </style>
 
 </head>
@@ -95,14 +94,14 @@ const container = document.getElementById("content");
 // 📊 Statistik
 const stats = {};
 
-// 📦 Einzelbestellungen speichern
+// 📦 Bestellungen
 const orders = [];
 
 // Statistik adden
-function addStat(name, size) {
+function addStat(name, size, qty) {
   if (!stats[name]) stats[name] = {};
   const s = size || "Einheitsgröße";
-  stats[name][s] = (stats[name][s] || 0) + 1;
+  stats[name][s] = (stats[name][s] || 0) + qty;
 }
 
 // Daten laden
@@ -121,24 +120,31 @@ async function load() {
     orders.push(data);
 
     data.cart.forEach(item => {
-      const match = item.text.match(/(.+)\((.+)\)/);
 
-      let name = item.text;
-      let size = "Einheitsgröße";
+      // 🔥 NEU: unterstützt ALTE + NEUE Struktur
+      let name, size, qty;
 
-      if (match) {
-        name = match[1].trim();
-        size = match[2].trim();
+      if (item.name) {
+        // neue Struktur
+        name = item.name;
+        size = item.size || "Einheitsgröße";
+        qty = item.qty || 1;
+      } else {
+        // alte Struktur fallback
+        const match = item.text?.match(/(.+)\((.+)\)/);
+        name = match ? match[1].trim() : item.text;
+        size = match ? match[2].trim() : "Einheitsgröße";
+        qty = 1;
       }
 
-      addStat(name, size);
+      addStat(name, size, qty);
     });
   });
 
   render();
 }
 
-// 🔥 UI
+// UI
 function render() {
 
   // 📦 BESTELLUNGEN
@@ -153,7 +159,15 @@ function render() {
     let items = "";
 
     o.cart.forEach(i => {
-      items += `<div class="item">🛒 ${i.text} - ${i.price} €</div>`;
+
+      if (i.name) {
+        // neue Struktur
+        items += `<div class="item">🛒 ${i.name} (${i.size}) x${i.qty} - ${i.price} €</div>`;
+      } else {
+        // alte Struktur
+        items += `<div class="item">🛒 ${i.text} - ${i.price} €</div>`;
+      }
+
     });
 
     div.innerHTML = `
