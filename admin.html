@@ -2,53 +2,135 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Auswertung</title>
+<title>Admin - Holzland Maradonas</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: white;
+  margin: 0;
+}
+
+header {
+  background: black;
+  padding: 20px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+.order {
+  background: #1c1c1c;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00c853;
+}
+
+.item {
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+
+.total {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+.date {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 8px;
+}
+
+</style>
+
 </head>
 <body>
 
-<h1>📊 Bestellungen Übersicht</h1>
-<ul id="stats"></ul>
+<header>📊 Admin Panel - Holzland Maradonas</header>
+
+<div class="container" id="content">
+<p>⏳ Lade Bestellungen...</p>
+</div>
 
 <script type="module">
+
+// 🔐 SIMPLE PASSWORTSCHUTZ
+const pw = prompt("Admin Passwort:");
+if (pw !== "holz123") {
+  document.body.innerHTML = "<h1>Zugriff verweigert</h1>";
+  throw new Error("blocked");
+}
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
-
+const firebaseConfig = {
+  apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
   authDomain: "onlineshop-maradonas.firebaseapp.com",
-
   projectId: "onlineshop-maradonas",
-
   storageBucket: "onlineshop-maradonas.firebasestorage.app",
-
   messagingSenderId: "491142033512",
-
   appId: "1:491142033512:web:f79e5db730349e9471cbdd"
-
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const stats = {};
+const container = document.getElementById("content");
 
-const snapshot = await getDocs(collection(db, "orders"));
+async function loadOrders() {
+  const snapshot = await getDocs(collection(db, "orders"));
 
-snapshot.forEach(doc => {
-  const data = doc.data();
+  container.innerHTML = "";
 
-  data.cart.forEach(item => {
-    stats[item] = (stats[item] || 0) + 1;
+  if (snapshot.empty) {
+    container.innerHTML = "<p>Keine Bestellungen vorhanden.</p>";
+    return;
+  }
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+
+    let total = 0;
+    let itemsHTML = "";
+
+    data.cart.forEach(item => {
+      itemsHTML += `<div class="item">🛒 ${item.text} - ${item.price} €</div>`;
+      total += item.price;
+    });
+
+    const div = document.createElement("div");
+    div.className = "order";
+
+    div.innerHTML = `
+      <div class="name">👤 ${data.name}</div>
+      <div>${itemsHTML}</div>
+      <div class="total">💰 Gesamt: ${total} €</div>
+      <div class="date">📅 ${new Date(data.time?.seconds * 1000 || Date.now()).toLocaleString()}</div>
+    `;
+
+    container.appendChild(div);
   });
-});
-
-const list = document.getElementById("stats");
-
-for (let key in stats) {
-  const li = document.createElement("li");
-  li.textContent = key + ": " + stats[key] + "x";
-  list.appendChild(li);
 }
+
+loadOrders();
+
 </script>
 
 </body>
