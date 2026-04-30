@@ -34,15 +34,28 @@ header {
   margin: auto;
 }
 
+/* NAME + INFO */
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
 #name {
   padding: 18px;
   font-size: 18px;
   width: 320px;
   border-radius: 12px;
   border: none;
-  margin-bottom: 20px;
 }
 
+.hint {
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* PRODUCTS */
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -56,27 +69,40 @@ header {
   text-align: center;
 }
 
+/* SIZE BUTTONS */
+.sizes {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.size-btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 2px solid #444;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.size-btn.active {
+  background: #00c853;
+  border-color: #00c853;
+}
+
 .product img {
   width: 100%;
   border-radius: 14px;
 }
 
-.size-select {
-  margin-top: 8px;
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-  background: #1c1c1c;
-  color: white;
-}
-
+/* BUTTON */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
   color: white;
-  padding: 8px;
-  border-radius: 8px;
-  margin: 3px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
   cursor: pointer;
 }
 
@@ -107,7 +133,10 @@ button {
 
 <div class="container">
 
-<input id="name" placeholder="Dein Name">
+<div class="name-row">
+  <input id="name" placeholder="Dein Name">
+  <div class="hint">Alle Logos gestickt (bis auf Polos...)!</div>
+</div>
 
 <div class="products" id="products"></div>
 
@@ -133,7 +162,6 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
-// PRODUKTE
 const products = [
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
@@ -160,13 +188,29 @@ const products = [
 ];
 
 let cart = [];
+let selectedSizes = {};
 
 // PRODUKTE
 function displayProducts() {
   const container = document.getElementById("products");
 
   products.forEach((p, index) => {
+
     const isHat = p.name.includes("Mütze");
+
+    let sizeHTML = "";
+
+    if (!isHat) {
+      sizeHTML = `
+        <div class="sizes">
+          ${["S","M","L","XL","XXL"].map(size =>
+            `<div class="size-btn" onclick="selectSize(${index}, '${size}', this)">${size}</div>`
+          ).join("")}
+        </div>
+      `;
+    } else {
+      sizeHTML = `<p>Einheitsgröße</p>`;
+    }
 
     const div = document.createElement("div");
     div.className = "product";
@@ -175,13 +219,7 @@ function displayProducts() {
       <img src="${p.img}">
       <h3>${p.name}</h3>
       <p>${p.price} €</p>
-
-      ${!isHat ? `
-        <select id="size-${index}">
-          <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-        </select>
-      ` : `<p>Einheitsgröße</p>`}
-
+      ${sizeHTML}
       <button onclick="addToCart(${index})">Hinzufügen</button>
     `;
 
@@ -189,22 +227,31 @@ function displayProducts() {
   });
 }
 
+// SIZE SELECT
+window.selectSize = function(index, size, el) {
+  selectedSizes[index] = size;
+
+  const parent = el.parentElement;
+  [...parent.children].forEach(btn => btn.classList.remove("active"));
+
+  el.classList.add("active");
+}
+
 // ADD
 window.addToCart = function(index) {
   const p = products[index];
   const isHat = p.name.includes("Mütze");
 
-  cart.push({
-    name: p.name,
-    size: isHat ? "Einheitsgröße" : document.getElementById(`size-${index}`).value,
-    price: p.price,
-    qty: 1
-  });
+  const size = isHat ? "Einheitsgröße" : selectedSizes[index];
+
+  if (!size) return alert("Bitte Größe wählen!");
+
+  cart.push({ name:p.name, size, price:p.price, qty:1 });
 
   updateCart();
 }
 
-// CART UI
+// CART
 function updateCart() {
   const container = document.getElementById("cartList");
   container.innerHTML = "";
@@ -214,34 +261,12 @@ function updateCart() {
   cart.forEach((item, i) => {
     total += item.price * item.qty;
 
-    let options = products.map(p =>
-      `<option ${p.name===item.name?"selected":""}>${p.name}</option>`
-    ).join("");
-
     container.innerHTML += `
       <div class="cart-item">
-
-        <select onchange="changeProduct(${i}, this.value)">
-          ${options}
-        </select>
-
-        ${item.name.includes("Mütze") ? 
-          "Einheitsgröße" :
-          `<select onchange="changeSize(${i}, this.value)">
-            <option ${item.size=="S"?"selected":""}>S</option>
-            <option ${item.size=="M"?"selected":""}>M</option>
-            <option ${item.size=="L"?"selected":""}>L</option>
-            <option ${item.size=="XL"?"selected":""}>XL</option>
-            <option ${item.size=="XXL"?"selected":""}>XXL</option>
-          </select>`
-        }
-
-        x${item.qty}
-
+        ${item.name} (${item.size}) x${item.qty}
         <button onclick="changeQty(${i}, -1)">-</button>
         <button onclick="changeQty(${i}, 1)">+</button>
         <button class="delete" onclick="removeItem(${i})">❌</button>
-
       </div>
     `;
   });
@@ -249,7 +274,6 @@ function updateCart() {
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
 }
 
-// CHANGE
 window.changeQty = (i,v)=>{
   cart[i].qty += v;
   if(cart[i].qty<=0) cart.splice(i,1);
@@ -258,17 +282,6 @@ window.changeQty = (i,v)=>{
 
 window.removeItem = i=>{
   cart.splice(i,1);
-  updateCart();
-}
-
-window.changeSize = (i,size)=>{
-  cart[i].size = size;
-}
-
-window.changeProduct = (i,name)=>{
-  const p = products.find(p=>p.name===name);
-  cart[i].name = p.name;
-  cart[i].price = p.price;
   updateCart();
 }
 
