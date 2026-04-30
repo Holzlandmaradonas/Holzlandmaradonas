@@ -18,32 +18,41 @@ body {
 
 /* HEADER */
 header {
-  padding: 25px;
-  text-align: center;
+  padding: 20px 40px;
   background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
   border-bottom: 1px solid #2a2a2a;
 }
 
-/* LOGO BILD */
-.logo-img {
-  height: 70px;
-  max-width: 90%;
-  object-fit: contain;
-  margin-bottom: 10px;
+/* FLEX HEADER */
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 20px;
 }
 
-/* TITEL */
+/* LOGO LINKS */
+.logo-img {
+  height: 95px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* TEXT */
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
+
 .logo {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: 2px;
 }
 
-/* SUBTITLE */
 .sub {
   font-size: 13px;
   color: #aaa;
-  margin-top: 5px;
 }
 
 /* CONTAINER */
@@ -108,18 +117,43 @@ button {
   border-radius: 18px;
   border: 1px solid #222;
 }
+
+.qty-btn {
+  background: #333;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.small-btn {
+  background: red;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
 </style>
 
 </head>
 <body>
 
-<!-- 🔥 HEADER MIT LOGO -->
+<!-- HEADER -->
 <header>
-  <img src="bilder/logo.jpg" class="logo-img" alt="Logo"
-       onerror="this.style.display='none'">
+  <div class="header-inner">
 
-  <div class="logo">Holzland Maradonas</div>
-  <div class="sub">Streetwear & Drops</div>
+    <img src="bilder/logo.jpg"
+         class="logo-img"
+         alt="Logo"
+         onerror="this.style.display='none'">
+
+    <div class="header-text">
+      <div class="logo">Holzland Maradonas</div>
+      <div class="sub">Streetwear & Drops</div>
+    </div>
+
+  </div>
 </header>
 
 <div class="container">
@@ -195,7 +229,7 @@ const products = [
 
 let cart = [];
 
-// 📦 PRODUKTE
+// PRODUCTS
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -215,39 +249,29 @@ function displayProducts() {
   });
 }
 
-// 🛒 ADD
+// CART
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
   const existing = cart.find(i => i.name === name && i.size === size);
 
-  if (existing) {
-    existing.qty++;
-  } else {
-    cart.push({ name, size, price, qty: 1 });
-  }
+  if (existing) existing.qty++;
+  else cart.push({ name, size, price, qty: 1 });
 
   updateCart();
 }
 
-// 🛒 REMOVE
+window.changeQty = function(index, value) {
+  cart[index].qty += value;
+  if (cart[index].qty <= 0) cart.splice(index, 1);
+  updateCart();
+}
+
 window.removeItem = function(index) {
   cart.splice(index, 1);
   updateCart();
 }
 
-// ➕➖
-window.changeQty = function(index, value) {
-  cart[index].qty += value;
-
-  if (cart[index].qty <= 0) {
-    cart.splice(index, 1);
-  }
-
-  updateCart();
-}
-
-// 🔄 CART
 function updateCart() {
   const list = document.getElementById("cartList");
   list.innerHTML = "";
@@ -271,7 +295,6 @@ function updateCart() {
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
 }
 
-// 📤 BESTELLEN
 window.bestellen = async function() {
   const name = document.getElementById("name").value;
 
