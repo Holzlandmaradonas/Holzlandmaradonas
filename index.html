@@ -224,7 +224,7 @@ window.bestellen = async function() {
   await addDoc(collection(db, "orders"), {
     name: name,
     cart: cart,
-    time: new Date()
+    time: serverTimestam()
   });
 
   alert("Bestellung gespeichert!");
