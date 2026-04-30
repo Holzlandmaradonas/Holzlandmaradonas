@@ -17,13 +17,12 @@ body {
 }
 
 header {
-  padding: 35px 20px;
+  padding: 35px;
   text-align: center;
   font-size: 34px;
   font-weight: 700;
   background: linear-gradient(135deg, #1f1f1f, #000);
   letter-spacing: 2px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .container {
@@ -42,7 +41,7 @@ input, select {
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 22px;
+  gap: 20px;
   margin-top: 20px;
 }
 
@@ -51,8 +50,8 @@ input, select {
   padding: 15px;
   border-radius: 16px;
   text-align: center;
-  transition: 0.2s;
   box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  transition: 0.2s;
 }
 
 .product:hover {
@@ -72,7 +71,6 @@ button {
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
-  transition: 0.2s;
   margin-top: 8px;
 }
 
@@ -91,9 +89,7 @@ button:hover {
 </head>
 <body>
 
-<header>
-  🪵 Holzland Maradonas
-</header>
+<header>🪵 Holzland Maradonas</header>
 
 <div class="container">
 
@@ -134,24 +130,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🧥 PRODUKTE MIT PREISEN
+// 🧥 PRODUKTE
 const products = [
+
+  // HOODIES (30 €)
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.jpg"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
   {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.jpg"},
   {name:"Hoodie Schwarz", price:30, img:"bilder/hoodie_schwarz.jpg"},
 
-  {name:"Pulli Rot", price:30, img:"bilder/pulli_rot.jpg"},
-  {name:"Pulli Weinrot", price:30, img:"bilder/pulli_weinrot.jpg"},
-  {name:"Pulli Grün", price:30, img:"bilder/pulli_gruen.jpg"},
-  {name:"Pulli Schwarz", price:30, img:"bilder/pulli_schwarz.jpg"},
+  // PULLIS (25 €)
+  {name:"Pulli Rot", price:25, img:"bilder/pulli_rot.jpg"},
+  {name:"Pulli Weinrot", price:25, img:"bilder/pulli_weinrot.jpg"},
+  {name:"Pulli Grün", price:25, img:"bilder/pulli_gruen.jpg"},
+  {name:"Pulli Schwarz", price:25, img:"bilder/pulli_schwarz.jpg"},
 
+  // T-SHIRTS (20 €)
   {name:"T-Shirt Rot", price:20, img:"bilder/tshirt_rot.jpg"},
   {name:"T-Shirt Weinrot", price:20, img:"bilder/tshirt_weinrot.jpg"},
   {name:"T-Shirt Grün", price:20, img:"bilder/tshirt_gruen.jpg"},
   {name:"T-Shirt Schwarz", price:20, img:"bilder/tshirt_schwarz.jpg"},
 
-  {name:"Mütze Rot", price:10, img:"bilder/muetze_rot.jpg"},
+  // POLOS (20 €)
+  {name:"Polo Rot", price:20, img:"bilder/polo_rot.jpg"},
+  {name:"Polo Grün", price:20, img:"bilder/polo_gruen.jpg"},
+  {name:"Polo Schwarz", price:20, img:"bilder/polo_schwarz.jpg"},
+
+  // MÜTZEN (10 €)
   {name:"Mütze Weinrot", price:10, img:"bilder/muetze_weinrot.jpg"},
   {name:"Mütze Grün", price:10, img:"bilder/muetze_gruen.jpg"},
   {name:"Mütze Schwarz", price:10, img:"bilder/muetze_schwarz.jpg"}
@@ -202,7 +207,7 @@ function updateCart() {
   });
 }
 
-// 📤 Bestellung speichern
+// 📤 Bestellung
 window.bestellen = async function() {
   const name = document.getElementById("name").value;
 
@@ -228,7 +233,7 @@ window.bestellen = async function() {
   updateCart();
 }
 
-// Start
+// START
 displayProducts();
 
 </script>
