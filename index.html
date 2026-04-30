@@ -14,7 +14,6 @@ body {
   color: white;
 }
 
-/* HEADER */
 header {
   padding: 20px 40px;
   background: rgba(20,20,20,0.8);
@@ -26,23 +25,15 @@ header {
   gap: 20px;
 }
 
-.logo-img {
-  height: 110px;
-}
+.logo-img { height: 110px; }
+.logo { font-size: 36px; font-weight: 700; }
 
-.logo {
-  font-size: 36px;
-  font-weight: 700;
-}
-
-/* CONTAINER */
 .container {
   padding: 30px;
   max-width: 1200px;
   margin: auto;
 }
 
-/* NAME */
 #name {
   padding: 18px;
   font-size: 18px;
@@ -52,7 +43,6 @@ header {
   margin-bottom: 20px;
 }
 
-/* PRODUCTS */
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -71,7 +61,6 @@ header {
   border-radius: 14px;
 }
 
-/* SIZE SELECT */
 .size-select {
   margin-top: 8px;
   padding: 8px;
@@ -81,16 +70,17 @@ header {
   color: white;
 }
 
-/* BUTTON */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
   color: white;
-  padding: 10px;
-  border-radius: 10px;
-  margin-top: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 3px;
   cursor: pointer;
 }
+
+.delete { background: red; }
 
 /* CART */
 #cart {
@@ -99,6 +89,10 @@ button {
   padding: 20px;
   border-radius: 18px;
 }
+
+.cart-item {
+  margin-bottom: 10px;
+}
 </style>
 </head>
 
@@ -106,7 +100,7 @@ button {
 
 <header>
   <div class="header-inner">
-    <img src="bilder/logo.jpg" class="logo-img" onerror="this.style.display='none'">
+    <img src="bilder/logo.jpg" class="logo-img">
     <div class="logo">Holzland Maradonas</div>
   </div>
 </header>
@@ -119,7 +113,7 @@ button {
 
 <div id="cart">
 <h2>🛒 Warenkorb</h2>
-<ul id="cartList"></ul>
+<div id="cartList"></div>
 <h3 id="total">Gesamt: 0 €</h3>
 <button onclick="bestellen()">Bestellen</button>
 </div>
@@ -129,12 +123,7 @@ button {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "AIzaSy...",
@@ -144,9 +133,8 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
-// 🔥 ALLE PRODUKTE
+// PRODUKTE
 const products = [
-
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
   {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.png"},
@@ -173,27 +161,26 @@ const products = [
 
 let cart = [];
 
-// PRODUKTE ANZEIGEN
+// PRODUKTE
 function displayProducts() {
   const container = document.getElementById("products");
-  container.innerHTML = "";
 
   products.forEach((p, index) => {
+    const isHat = p.name.includes("Mütze");
+
     const div = document.createElement("div");
     div.className = "product";
 
     div.innerHTML = `
-      <img src="${p.img}" onerror="this.style.display='none'">
+      <img src="${p.img}">
       <h3>${p.name}</h3>
       <p>${p.price} €</p>
 
-      <select class="size-select" id="size-${index}">
-        <option>S</option>
-        <option>M</option>
-        <option>L</option>
-        <option>XL</option>
-        <option>XXL</option>
-      </select>
+      ${!isHat ? `
+        <select id="size-${index}">
+          <option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+        </select>
+      ` : `<p>Einheitsgröße</p>`}
 
       <button onclick="addToCart(${index})">Hinzufügen</button>
     `;
@@ -202,43 +189,94 @@ function displayProducts() {
   });
 }
 
-// WARENKORB
+// ADD
 window.addToCart = function(index) {
-  const product = products[index];
-  const size = document.getElementById(`size-${index}`).value;
+  const p = products[index];
+  const isHat = p.name.includes("Mütze");
 
   cart.push({
-    name: product.name,
-    size,
-    price: product.price
+    name: p.name,
+    size: isHat ? "Einheitsgröße" : document.getElementById(`size-${index}`).value,
+    price: p.price,
+    qty: 1
   });
 
   updateCart();
 }
 
-// CART UPDATE
+// CART UI
 function updateCart() {
-  const list = document.getElementById("cartList");
-  list.innerHTML = "";
+  const container = document.getElementById("cartList");
+  container.innerHTML = "";
 
   let total = 0;
 
-  cart.forEach(i => {
-    total += i.price;
+  cart.forEach((item, i) => {
+    total += item.price * item.qty;
 
-    const li = document.createElement("li");
-    li.textContent = `${i.name} (${i.size}) - ${i.price} €`;
-    list.appendChild(li);
+    let options = products.map(p =>
+      `<option ${p.name===item.name?"selected":""}>${p.name}</option>`
+    ).join("");
+
+    container.innerHTML += `
+      <div class="cart-item">
+
+        <select onchange="changeProduct(${i}, this.value)">
+          ${options}
+        </select>
+
+        ${item.name.includes("Mütze") ? 
+          "Einheitsgröße" :
+          `<select onchange="changeSize(${i}, this.value)">
+            <option ${item.size=="S"?"selected":""}>S</option>
+            <option ${item.size=="M"?"selected":""}>M</option>
+            <option ${item.size=="L"?"selected":""}>L</option>
+            <option ${item.size=="XL"?"selected":""}>XL</option>
+            <option ${item.size=="XXL"?"selected":""}>XXL</option>
+          </select>`
+        }
+
+        x${item.qty}
+
+        <button onclick="changeQty(${i}, -1)">-</button>
+        <button onclick="changeQty(${i}, 1)">+</button>
+        <button class="delete" onclick="removeItem(${i})">❌</button>
+
+      </div>
+    `;
   });
 
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
 }
 
-// BESTELLEN
+// CHANGE
+window.changeQty = (i,v)=>{
+  cart[i].qty += v;
+  if(cart[i].qty<=0) cart.splice(i,1);
+  updateCart();
+}
+
+window.removeItem = i=>{
+  cart.splice(i,1);
+  updateCart();
+}
+
+window.changeSize = (i,size)=>{
+  cart[i].size = size;
+}
+
+window.changeProduct = (i,name)=>{
+  const p = products.find(p=>p.name===name);
+  cart[i].name = p.name;
+  cart[i].price = p.price;
+  updateCart();
+}
+
+// ORDER
 window.bestellen = async function() {
   const name = document.getElementById("name").value;
 
-  if (!name || cart.length === 0) return alert("Bitte alles ausfüllen!");
+  if (!name || cart.length === 0) return alert("Fehler!");
 
   await addDoc(collection(db, "orders"), {
     name,
