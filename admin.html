@@ -17,17 +17,12 @@ header {
   padding: 20px;
   text-align: center;
   font-size: 26px;
-  font-weight: bold;
 }
 
 .container {
   padding: 20px;
   max-width: 1100px;
   margin: auto;
-}
-
-.section {
-  margin-top: 30px;
 }
 
 .card {
@@ -37,53 +32,51 @@ header {
   border-radius: 12px;
 }
 
-.name {
-  color: #00c853;
-  font-weight: bold;
-  font-size: 18px;
+button {
+  margin: 3px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.item {
-  margin-left: 10px;
-  padding: 3px 0;
-}
+.delete { background: red; color: white; }
+.save { background: #00c853; color: white; }
 
-.stat-card {
-  background: #222;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 10px;
+input {
+  padding: 5px;
+  margin: 3px;
 }
 </style>
 
 </head>
 <body>
 
-<header>📊 Admin Panel - Holzland Maradonas</header>
-
-<div class="container" id="content">
-  <p>⏳ Lade Daten...</p>
-</div>
+<header>📊 Admin Panel</header>
+<div class="container" id="content">Lade...</div>
 
 <script type="module">
 
-// 🔐 LOGIN
 const pw = prompt("Admin Passwort:");
 if (pw !== "holz123") {
-  document.body.innerHTML = "<h1>Zugriff verweigert</h1>";
-  throw new Error("blocked");
+  document.body.innerHTML = "Kein Zugriff";
+  throw new Error();
 }
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
+  apiKey: "AIza...",
   authDomain: "onlineshop-maradonas.firebaseapp.com",
   projectId: "onlineshop-maradonas",
-  storageBucket: "onlineshop-maradonas.firebasestorage.app",
-  messagingSenderId: "491142033512",
-  appId: "1:491142033512:web:f79e5db730349e9471cbdd"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -91,121 +84,66 @@ const db = getFirestore(app);
 
 const container = document.getElementById("content");
 
-// 📊 Statistik
-const stats = {};
-
-// 📦 Bestellungen
-const orders = [];
-
-// Statistik adden
-function addStat(name, size, qty) {
-  if (!stats[name]) stats[name] = {};
-  const s = size || "Einheitsgröße";
-  stats[name][s] = (stats[name][s] || 0) + qty;
-}
-
-// Daten laden
+// 🔥 LADEN
 async function load() {
   const snapshot = await getDocs(collection(db, "orders"));
-
   container.innerHTML = "";
 
-  if (snapshot.empty) {
-    container.innerHTML = "<p>Keine Bestellungen vorhanden.</p>";
-    return;
-  }
+  snapshot.forEach(d => {
+    const data = d.data();
+    const id = d.id; // 🔥 WICHTIG
 
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    orders.push(data);
-
-    data.cart.forEach(item => {
-
-      // 🔥 NEU: unterstützt ALTE + NEUE Struktur
-      let name, size, qty;
-
-      if (item.name) {
-        // neue Struktur
-        name = item.name;
-        size = item.size || "Einheitsgröße";
-        qty = item.qty || 1;
-      } else {
-        // alte Struktur fallback
-        const match = item.text?.match(/(.+)\((.+)\)/);
-        name = match ? match[1].trim() : item.text;
-        size = match ? match[2].trim() : "Einheitsgröße";
-        qty = 1;
-      }
-
-      addStat(name, size, qty);
-    });
-  });
-
-  render();
-}
-
-// UI
-function render() {
-
-  // 📦 BESTELLUNGEN
-  const orderSection = document.createElement("div");
-  orderSection.className = "section";
-  orderSection.innerHTML = "<h2>📦 Einzelbestellungen</h2>";
-
-  orders.forEach(o => {
     const div = document.createElement("div");
     div.className = "card";
 
-    let items = "";
+    let itemsHTML = "";
 
-    o.cart.forEach(i => {
-
-      if (i.name) {
-        // neue Struktur
-        items += `<div class="item">🛒 ${i.name} (${i.size}) x${i.qty} - ${i.price} €</div>`;
-      } else {
-        // alte Struktur
-        items += `<div class="item">🛒 ${i.text} - ${i.price} €</div>`;
-      }
-
+    data.cart.forEach((item, index) => {
+      itemsHTML += `
+        <div>
+          <input value="${item.name}" id="name-${id}-${index}">
+          <input value="${item.size}" id="size-${id}-${index}">
+          <input value="${item.qty}" type="number" id="qty-${id}-${index}">
+        </div>
+      `;
     });
 
     div.innerHTML = `
-      <div class="name">👤 ${o.name}</div>
-      ${items}
+      <h3>${data.name}</h3>
+      ${itemsHTML}
+      <button class="save" onclick="save('${id}', ${data.cart.length})">💾 Speichern</button>
+      <button class="delete" onclick="del('${id}')">❌ Löschen</button>
     `;
 
-    orderSection.appendChild(div);
+    container.appendChild(div);
   });
+}
 
-  // 📊 STATISTIK
-  const statSection = document.createElement("div");
-  statSection.className = "section";
-  statSection.innerHTML = "<h2>📊 Statistik</h2>";
+// 🔥 LÖSCHEN
+window.del = async function(id) {
+  if (!confirm("Wirklich löschen?")) return;
+  await deleteDoc(doc(db, "orders", id));
+  load();
+}
 
-  for (let product in stats) {
-    let total = 0;
-    let sizes = "";
+// 🔥 SPEICHERN
+window.save = async function(id, length) {
+  const newCart = [];
 
-    for (let size in stats[product]) {
-      total += stats[product][size];
-      sizes += `<div>• ${size}: ${stats[product][size]}x</div>`;
-    }
+  for (let i = 0; i < length; i++) {
+    const name = document.getElementById(`name-${id}-${i}`).value;
+    const size = document.getElementById(`size-${id}-${i}`).value;
+    const qty = parseInt(document.getElementById(`qty-${id}-${i}`).value);
 
-    const div = document.createElement("div");
-    div.className = "stat-card";
-
-    div.innerHTML = `
-      <b>${product}</b><br>
-      Gesamt: ${total}x<br>
-      ${sizes}
-    `;
-
-    statSection.appendChild(div);
+    newCart.push({ name, size, qty });
   }
 
-  container.appendChild(orderSection);
-  container.appendChild(statSection);
+  await updateDoc(doc(db, "orders", id), {
+    cart: newCart
+  });
+
+  alert("Gespeichert!");
+  load();
 }
 
 load();
