@@ -17,7 +17,6 @@ header {
   background: black;
   text-align: center;
   font-size: 26px;
-  font-weight: bold;
 }
 
 .container {
@@ -36,34 +35,48 @@ header {
 .name {
   color: #00c853;
   font-weight: bold;
-  font-size: 18px;
 }
 
 .item {
-  margin-left: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 5px 0;
 }
 
-.stat {
-  background: #222;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 10px;
+button {
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.edit { background: orange; }
+.save { background: #00c853; }
+.delete { background: red; }
+
+input, select {
+  padding: 5px;
 }
 </style>
 </head>
 
 <body>
 
-<header>📊 Admin Panel</header>
+<header>📊 Admin - Bestellungen</header>
 
-<div class="container" id="app">
-⏳ Lade Daten...
-</div>
+<div class="container" id="app">⏳ Lade...</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "AIzaSy...",
@@ -75,74 +88,92 @@ const db = getFirestore(app);
 
 const container = document.getElementById("app");
 
-let stats = {};
 let orders = [];
-
-function addStat(item) {
-  const key = `${item.name} (${item.size})`;
-
-  if (!stats[key]) {
-    stats[key] = 0;
-  }
-
-  stats[key] += item.qty;
-}
 
 async function load() {
   const snapshot = await getDocs(collection(db, "orders"));
 
   container.innerHTML = "";
 
-  if (snapshot.empty) {
-    container.innerHTML = "<p>Keine Bestellungen</p>";
-    return;
-  }
-
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    orders.push(data);
-
-    data.cart.forEach(addStat);
+  snapshot.forEach(docSnap => {
+    orders.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
   });
 
   render();
 }
 
 function render() {
+  container.innerHTML = "<h2>📦 Bestellungen</h2>";
 
-  // 📦 BESTELLUNGEN
-  const orderDiv = document.createElement("div");
+  orders.forEach((o, orderIndex) => {
 
-  orderDiv.innerHTML = "<h2>📦 Bestellungen</h2>";
-
-  orders.forEach(o => {
     const div = document.createElement("div");
     div.className = "card";
 
     let html = `<div class="name">👤 ${o.name}</div>`;
 
-    o.cart.forEach(i => {
-      html += `<div class="item">🛒 ${i.name} (${i.size}) x${i.qty}</div>`;
+    o.cart.forEach((item, i) => {
+      html += `
+        <div class="item">
+
+          <input value="${item.name}" onchange="editItem(${orderIndex},${i},'name',this.value)">
+          
+          <select onchange="editItem(${orderIndex},${i},'size',this.value)">
+            <option ${item.size=="S"?"selected":""}>S</option>
+            <option ${item.size=="M"?"selected":""}>M</option>
+            <option ${item.size=="L"?"selected":""}>L</option>
+            <option ${item.size=="XL"?"selected":""}>XL</option>
+            <option ${item.size=="XXL"?"selected":""}>XXL</option>
+            <option ${item.size=="Einheitsgröße"?"selected":""}>Einheitsgröße</option>
+          </select>
+
+          <input type="number" value="${item.qty}" min="1"
+            onchange="editItem(${orderIndex},${i},'qty',this.value)">
+
+          <button class="delete" onclick="removeItem(${orderIndex},${i})">❌</button>
+
+        </div>
+      `;
     });
 
+    html += `
+      <button class="save" onclick="saveOrder(${orderIndex})">💾 Speichern</button>
+    `;
+
     div.innerHTML = html;
-    orderDiv.appendChild(div);
+    container.appendChild(div);
+  });
+}
+
+// EDIT
+window.editItem = function(oIndex, iIndex, field, value) {
+  orders[oIndex].cart[iIndex][field] = value;
+
+  if(field === "qty") {
+    orders[oIndex].cart[iIndex][field] = parseInt(value);
+  }
+}
+
+// DELETE ITEM
+window.removeItem = function(oIndex, iIndex) {
+  orders[oIndex].cart.splice(iIndex, 1);
+  render();
+}
+
+// SAVE
+window.saveOrder = async function(index) {
+  const order = orders[index];
+
+  const ref = doc(db, "orders", order.id);
+
+  await updateDoc(ref, {
+    cart: order.cart
   });
 
-  // 📊 STATISTIK
-  const statDiv = document.createElement("div");
-
-  statDiv.innerHTML = "<h2>📊 Statistik</h2>";
-
-  Object.keys(stats).forEach(key => {
-    const div = document.createElement("div");
-    div.className = "stat";
-    div.textContent = `${key}: ${stats[key]}x`;
-    statDiv.appendChild(div);
-  });
-
-  container.appendChild(orderDiv);
-  container.appendChild(statDiv);
+  alert("Gespeichert!");
 }
 
 load();
