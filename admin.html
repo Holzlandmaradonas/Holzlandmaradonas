@@ -13,16 +13,17 @@ body {
 }
 
 header {
-  background: black;
   padding: 20px;
+  background: black;
   text-align: center;
   font-size: 26px;
+  font-weight: bold;
 }
 
 .container {
-  padding: 20px;
   max-width: 1100px;
   margin: auto;
+  padding: 20px;
 }
 
 .card {
@@ -32,118 +33,116 @@ header {
   border-radius: 12px;
 }
 
-button {
-  margin: 3px;
-  padding: 5px 8px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.name {
+  color: #00c853;
+  font-weight: bold;
+  font-size: 18px;
 }
 
-.delete { background: red; color: white; }
-.save { background: #00c853; color: white; }
+.item {
+  margin-left: 10px;
+}
 
-input {
-  padding: 5px;
-  margin: 3px;
+.stat {
+  background: #222;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
 }
 </style>
-
 </head>
+
 <body>
 
 <header>📊 Admin Panel</header>
-<div class="container" id="content">Lade...</div>
+
+<div class="container" id="app">
+⏳ Lade Daten...
+</div>
 
 <script type="module">
 
-const pw = prompt("Admin Passwort:");
-if (pw !== "holz123") {
-  document.body.innerHTML = "Kein Zugriff";
-  throw new Error();
-}
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  deleteDoc,
-  updateDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIza...",
+const app = initializeApp({
+  apiKey: "AIzaSy...",
   authDomain: "onlineshop-maradonas.firebaseapp.com",
-  projectId: "onlineshop-maradonas",
-};
+  projectId: "onlineshop-maradonas"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const container = document.getElementById("content");
+const container = document.getElementById("app");
 
-// 🔥 LADEN
+let stats = {};
+let orders = [];
+
+function addStat(item) {
+  const key = `${item.name} (${item.size})`;
+
+  if (!stats[key]) {
+    stats[key] = 0;
+  }
+
+  stats[key] += item.qty;
+}
+
 async function load() {
   const snapshot = await getDocs(collection(db, "orders"));
+
   container.innerHTML = "";
 
-  snapshot.forEach(d => {
-    const data = d.data();
-    const id = d.id; // 🔥 WICHTIG
+  if (snapshot.empty) {
+    container.innerHTML = "<p>Keine Bestellungen</p>";
+    return;
+  }
 
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    orders.push(data);
+
+    data.cart.forEach(addStat);
+  });
+
+  render();
+}
+
+function render() {
+
+  // 📦 BESTELLUNGEN
+  const orderDiv = document.createElement("div");
+
+  orderDiv.innerHTML = "<h2>📦 Bestellungen</h2>";
+
+  orders.forEach(o => {
     const div = document.createElement("div");
     div.className = "card";
 
-    let itemsHTML = "";
+    let html = `<div class="name">👤 ${o.name}</div>`;
 
-    data.cart.forEach((item, index) => {
-      itemsHTML += `
-        <div>
-          <input value="${item.name}" id="name-${id}-${index}">
-          <input value="${item.size}" id="size-${id}-${index}">
-          <input value="${item.qty}" type="number" id="qty-${id}-${index}">
-        </div>
-      `;
+    o.cart.forEach(i => {
+      html += `<div class="item">🛒 ${i.name} (${i.size}) x${i.qty}</div>`;
     });
 
-    div.innerHTML = `
-      <h3>${data.name}</h3>
-      ${itemsHTML}
-      <button class="save" onclick="save('${id}', ${data.cart.length})">💾 Speichern</button>
-      <button class="delete" onclick="del('${id}')">❌ Löschen</button>
-    `;
-
-    container.appendChild(div);
-  });
-}
-
-// 🔥 LÖSCHEN
-window.del = async function(id) {
-  if (!confirm("Wirklich löschen?")) return;
-  await deleteDoc(doc(db, "orders", id));
-  load();
-}
-
-// 🔥 SPEICHERN
-window.save = async function(id, length) {
-  const newCart = [];
-
-  for (let i = 0; i < length; i++) {
-    const name = document.getElementById(`name-${id}-${i}`).value;
-    const size = document.getElementById(`size-${id}-${i}`).value;
-    const qty = parseInt(document.getElementById(`qty-${id}-${i}`).value);
-
-    newCart.push({ name, size, qty });
-  }
-
-  await updateDoc(doc(db, "orders", id), {
-    cart: newCart
+    div.innerHTML = html;
+    orderDiv.appendChild(div);
   });
 
-  alert("Gespeichert!");
-  load();
+  // 📊 STATISTIK
+  const statDiv = document.createElement("div");
+
+  statDiv.innerHTML = "<h2>📊 Statistik</h2>";
+
+  Object.keys(stats).forEach(key => {
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.textContent = `${key}: ${stats[key]}x`;
+    statDiv.appendChild(div);
+  });
+
+  container.appendChild(orderDiv);
+  container.appendChild(statDiv);
 }
 
 load();
