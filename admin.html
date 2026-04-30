@@ -6,7 +6,7 @@
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0f0f0f;
   color: white;
   margin: 0;
@@ -21,40 +21,21 @@ header {
 }
 
 .container {
+  padding: 20px;
   max-width: 1000px;
   margin: auto;
-  padding: 20px;
 }
 
-.order {
+h2 {
+  margin-top: 20px;
+}
+
+.card {
   background: #1c1c1c;
   padding: 15px;
+  margin-bottom: 12px;
   border-radius: 12px;
-  margin-bottom: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-}
-
-.name {
-  font-size: 18px;
-  font-weight: bold;
-  color: #00c853;
-}
-
-.item {
-  padding: 4px 0;
-  border-bottom: 1px solid #333;
-}
-
-.total {
-  margin-top: 10px;
-  font-weight: bold;
-  color: #ffcc00;
-}
-
-.date {
-  font-size: 12px;
-  opacity: 0.7;
-  margin-top: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
 </style>
@@ -65,12 +46,12 @@ header {
 <header>📊 Admin Panel - Holzland Maradonas</header>
 
 <div class="container" id="content">
-<p>⏳ Lade Bestellungen...</p>
+  <p>⏳ Lade Bestellungen...</p>
 </div>
 
 <script type="module">
 
-// 🔐 SIMPLE PASSWORTSCHUTZ
+// 🔐 ADMIN SCHUTZ
 const pw = prompt("Admin Passwort:");
 if (pw !== "holz123") {
   document.body.innerHTML = "<h1>Zugriff verweigert</h1>";
@@ -94,7 +75,17 @@ const db = getFirestore(app);
 
 const container = document.getElementById("content");
 
-async function loadOrders() {
+// 📊 Statistik-Objekt
+const stats = {};
+
+function add(name, size) {
+  if (!stats[name]) stats[name] = {};
+  const s = size || "Einheitsgröße";
+  stats[name][s] = (stats[name][s] || 0) + 1;
+}
+
+// 📦 Daten laden
+async function load() {
   const snapshot = await getDocs(collection(db, "orders"));
 
   container.innerHTML = "";
@@ -107,29 +98,51 @@ async function loadOrders() {
   snapshot.forEach(doc => {
     const data = doc.data();
 
-    let total = 0;
-    let itemsHTML = "";
-
     data.cart.forEach(item => {
-      itemsHTML += `<div class="item">🛒 ${item.text} - ${item.price} €</div>`;
-      total += item.price;
+      const match = item.text.match(/(.+)\((.+)\)/);
+
+      let name = item.text;
+      let size = "Einheitsgröße";
+
+      if (match) {
+        name = match[1].trim();
+        size = match[2].trim();
+      }
+
+      add(name, size);
     });
+  });
+
+  render();
+}
+
+// 📊 Anzeige
+function render() {
+  container.innerHTML = "<h2>📦 Auswertung</h2>";
+
+  for (let product in stats) {
+    let total = 0;
+    let sizeText = "";
+
+    for (let size in stats[product]) {
+      total += stats[product][size];
+      sizeText += `<div>• ${size}: ${stats[product][size]}x</div>`;
+    }
 
     const div = document.createElement("div");
-    div.className = "order";
+    div.className = "card";
 
     div.innerHTML = `
-      <div class="name">👤 ${data.name}</div>
-      <div>${itemsHTML}</div>
-      <div class="total">💰 Gesamt: ${total} €</div>
-      <div class="date">📅 ${new Date(data.time?.seconds * 1000 || Date.now()).toLocaleString()}</div>
+      <b>${product}</b><br>
+      Gesamt: ${total}x<br><br>
+      ${sizeText}
     `;
 
     container.appendChild(div);
-  });
+  }
 }
 
-loadOrders();
+load();
 
 </script>
 
