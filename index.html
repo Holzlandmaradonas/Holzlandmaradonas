@@ -2,68 +2,98 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Merch Shop</title>
+<title>Holzland Maradonas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
 body {
-  font-family: Arial;
+  font-family: 'Poppins', sans-serif;
   margin: 0;
-  background: #111;
+  background: #0f0f0f;
   color: white;
 }
 
 header {
-  padding: 20px;
+  padding: 35px 20px;
   text-align: center;
-  font-size: 28px;
-  background: black;
+  font-size: 34px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1f1f1f, #000);
+  letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .container {
-  padding: 20px;
+  padding: 25px;
+  max-width: 1200px;
+  margin: auto;
 }
 
-input, select, button {
-  padding: 10px;
-  margin: 5px;
+input, select {
+  padding: 12px;
+  margin: 6px;
+  border-radius: 8px;
+  border: none;
 }
 
 .products {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+  margin-top: 20px;
 }
 
 .product {
-  background: #222;
-  padding: 10px;
-  border-radius: 10px;
+  background: #1c1c1c;
+  padding: 15px;
+  border-radius: 16px;
   text-align: center;
+  transition: 0.2s;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+.product:hover {
+  transform: translateY(-5px);
 }
 
 .product img {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 button {
-  background: #00c853;
+  background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
   color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+  margin-top: 8px;
+}
+
+button:hover {
+  transform: scale(1.05);
 }
 
 #cart {
-  margin-top: 20px;
-  background: #222;
-  padding: 10px;
+  margin-top: 30px;
+  background: #1c1c1c;
+  padding: 15px;
+  border-radius: 16px;
 }
 </style>
 
 </head>
 <body>
 
-<header>🧥 Merch Shop</header>
+<header>
+  🪵 Holzland Maradonas
+</header>
 
 <div class="container">
 
@@ -106,25 +136,21 @@ const db = getFirestore(app);
 
 // 🧥 PRODUKTE MIT PREISEN
 const products = [
-  // Hoodies
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.jpg"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
   {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.jpg"},
   {name:"Hoodie Schwarz", price:30, img:"bilder/hoodie_schwarz.jpg"},
 
-  // Pullis
   {name:"Pulli Rot", price:30, img:"bilder/pulli_rot.jpg"},
   {name:"Pulli Weinrot", price:30, img:"bilder/pulli_weinrot.jpg"},
   {name:"Pulli Grün", price:30, img:"bilder/pulli_gruen.jpg"},
   {name:"Pulli Schwarz", price:30, img:"bilder/pulli_schwarz.jpg"},
 
-  // T-Shirts
   {name:"T-Shirt Rot", price:20, img:"bilder/tshirt_rot.jpg"},
   {name:"T-Shirt Weinrot", price:20, img:"bilder/tshirt_weinrot.jpg"},
   {name:"T-Shirt Grün", price:20, img:"bilder/tshirt_gruen.jpg"},
   {name:"T-Shirt Schwarz", price:20, img:"bilder/tshirt_schwarz.jpg"},
 
-  // Mützen
   {name:"Mütze Rot", price:10, img:"bilder/muetze_rot.jpg"},
   {name:"Mütze Weinrot", price:10, img:"bilder/muetze_weinrot.jpg"},
   {name:"Mütze Grün", price:10, img:"bilder/muetze_gruen.jpg"},
@@ -143,8 +169,8 @@ function displayProducts() {
 
     div.innerHTML = `
       <img src="${p.img}">
-      <p>${p.name}</p>
-      <p><b>${p.price} €</b></p>
+      <p><b>${p.name}</b></p>
+      <p>${p.price} €</p>
       <button onclick="addToCart('${p.name}', ${p.price})">Hinzufügen</button>
     `;
 
@@ -152,7 +178,7 @@ function displayProducts() {
   });
 }
 
-// 🛒 In Warenkorb
+// 🛒 Warenkorb
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
