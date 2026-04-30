@@ -16,14 +16,14 @@ body {
   color: white;
 }
 
-/* HEADER */
+/* ================= HEADER FIX ================= */
 header {
   padding: 20px 40px;
   background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
   border-bottom: 1px solid #2a2a2a;
+  text-align: left !important;
 }
 
-/* FLEX HEADER */
 .header-inner {
   display: flex;
   align-items: center;
@@ -31,11 +31,12 @@ header {
   gap: 20px;
 }
 
-/* LOGO LINKS */
+/* LOGO LINKS + GROSS */
 .logo-img {
-  height: 95px;
+  height: 120px !important;
   width: auto;
   object-fit: contain;
+  display: block;
 }
 
 /* TEXT */
@@ -45,7 +46,7 @@ header {
 }
 
 .logo {
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 700;
   letter-spacing: 2px;
 }
@@ -55,14 +56,14 @@ header {
   color: #aaa;
 }
 
-/* CONTAINER */
+/* ================= SHOP ================= */
+
 .container {
   padding: 25px;
   max-width: 1200px;
   margin: auto;
 }
 
-/* INPUTS */
 input, select {
   padding: 12px;
   margin: 6px;
@@ -70,7 +71,6 @@ input, select {
   border: none;
 }
 
-/* PRODUCTS */
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -97,7 +97,6 @@ input, select {
   border-radius: 14px;
 }
 
-/* BUTTON */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
@@ -109,7 +108,6 @@ button {
   margin-top: 8px;
 }
 
-/* CART */
 #cart {
   margin-top: 30px;
   background: #151515;
@@ -137,9 +135,10 @@ button {
 </style>
 
 </head>
+
 <body>
 
-<!-- HEADER -->
+<!-- ================= HEADER ================= -->
 <header>
   <div class="header-inner">
 
@@ -150,12 +149,13 @@ button {
 
     <div class="header-text">
       <div class="logo">Holzland Maradonas</div>
-      <div class="sub">Streetwear & Drops</div>
+      <div class="sub">Podcast Merch</div>
     </div>
 
   </div>
 </header>
 
+<!-- ================= SHOP ================= -->
 <div class="container">
 
 <input id="name" placeholder="Dein Name">
@@ -201,7 +201,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🧥 PRODUKTE
+// ================= PRODUKTE =================
 const products = [
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
@@ -229,7 +229,7 @@ const products = [
 
 let cart = [];
 
-// PRODUCTS
+// ================= PRODUCTS =================
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -249,7 +249,7 @@ function displayProducts() {
   });
 }
 
-// CART
+// ================= CART =================
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
@@ -295,6 +295,7 @@ function updateCart() {
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
 }
 
+// ================= ORDER =================
 window.bestellen = async function() {
   const name = document.getElementById("name").value;
 
