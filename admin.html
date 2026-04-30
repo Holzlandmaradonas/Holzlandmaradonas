@@ -22,20 +22,37 @@ header {
 
 .container {
   padding: 20px;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: auto;
 }
 
-h2 {
-  margin-top: 20px;
+.section {
+  margin-top: 30px;
 }
 
 .card {
   background: #1c1c1c;
   padding: 15px;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.name {
+  color: #00c853;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.item {
+  margin-left: 10px;
+  padding: 3px 0;
+}
+
+.stat-card {
+  background: #222;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
 }
 
 </style>
@@ -46,12 +63,12 @@ h2 {
 <header>📊 Admin Panel - Holzland Maradonas</header>
 
 <div class="container" id="content">
-  <p>⏳ Lade Bestellungen...</p>
+  <p>⏳ Lade Daten...</p>
 </div>
 
 <script type="module">
 
-// 🔐 ADMIN SCHUTZ
+// 🔐 LOGIN
 const pw = prompt("Admin Passwort:");
 if (pw !== "holz123") {
   document.body.innerHTML = "<h1>Zugriff verweigert</h1>";
@@ -75,16 +92,20 @@ const db = getFirestore(app);
 
 const container = document.getElementById("content");
 
-// 📊 Statistik-Objekt
+// 📊 Statistik
 const stats = {};
 
-function add(name, size) {
+// 📦 Einzelbestellungen speichern
+const orders = [];
+
+// Statistik adden
+function addStat(name, size) {
   if (!stats[name]) stats[name] = {};
   const s = size || "Einheitsgröße";
   stats[name][s] = (stats[name][s] || 0) + 1;
 }
 
-// 📦 Daten laden
+// Daten laden
 async function load() {
   const snapshot = await getDocs(collection(db, "orders"));
 
@@ -97,6 +118,7 @@ async function load() {
 
   snapshot.forEach(doc => {
     const data = doc.data();
+    orders.push(data);
 
     data.cart.forEach(item => {
       const match = item.text.match(/(.+)\((.+)\)/);
@@ -109,37 +131,67 @@ async function load() {
         size = match[2].trim();
       }
 
-      add(name, size);
+      addStat(name, size);
     });
   });
 
   render();
 }
 
-// 📊 Anzeige
+// 🔥 UI
 function render() {
-  container.innerHTML = "<h2>📦 Auswertung</h2>";
 
-  for (let product in stats) {
-    let total = 0;
-    let sizeText = "";
+  // 📦 BESTELLUNGEN
+  const orderSection = document.createElement("div");
+  orderSection.className = "section";
+  orderSection.innerHTML = "<h2>📦 Einzelbestellungen</h2>";
 
-    for (let size in stats[product]) {
-      total += stats[product][size];
-      sizeText += `<div>• ${size}: ${stats[product][size]}x</div>`;
-    }
-
+  orders.forEach(o => {
     const div = document.createElement("div");
     div.className = "card";
 
+    let items = "";
+
+    o.cart.forEach(i => {
+      items += `<div class="item">🛒 ${i.text} - ${i.price} €</div>`;
+    });
+
     div.innerHTML = `
-      <b>${product}</b><br>
-      Gesamt: ${total}x<br><br>
-      ${sizeText}
+      <div class="name">👤 ${o.name}</div>
+      ${items}
     `;
 
-    container.appendChild(div);
+    orderSection.appendChild(div);
+  });
+
+  // 📊 STATISTIK
+  const statSection = document.createElement("div");
+  statSection.className = "section";
+  statSection.innerHTML = "<h2>📊 Statistik</h2>";
+
+  for (let product in stats) {
+    let total = 0;
+    let sizes = "";
+
+    for (let size in stats[product]) {
+      total += stats[product][size];
+      sizes += `<div>• ${size}: ${stats[product][size]}x</div>`;
+    }
+
+    const div = document.createElement("div");
+    div.className = "stat-card";
+
+    div.innerHTML = `
+      <b>${product}</b><br>
+      Gesamt: ${total}x<br>
+      ${sizes}
+    `;
+
+    statSection.appendChild(div);
   }
+
+  container.appendChild(orderSection);
+  container.appendChild(statSection);
 }
 
 load();
