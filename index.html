@@ -6,49 +6,45 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
   margin: 0;
-  background: #0f0f0f;
+  background: radial-gradient(circle at top, #1a1a1a, #0a0a0a);
   color: white;
 }
 
-/* ================= HEADER FIX ================= */
+/* ================= HEADER ================= */
 header {
   padding: 20px 40px;
-  background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
-  border-bottom: 1px solid #2a2a2a;
-  text-align: left !important;
+  background: rgba(20,20,20,0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .header-inner {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 20px;
+  gap: 18px;
 }
 
-/* LOGO LINKS + GROSS */
 .logo-img {
-  height: 120px !important;
+  height: 110px;
   width: auto;
   object-fit: contain;
-  display: block;
 }
 
-/* TEXT */
 .header-text {
   display: flex;
   flex-direction: column;
 }
 
 .logo {
-  font-size: 36px;
+  font-size: 38px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 
 .sub {
@@ -56,35 +52,39 @@ header {
   color: #aaa;
 }
 
-/* ================= SHOP ================= */
-
+/* ================= LAYOUT ================= */
 .container {
-  padding: 25px;
+  padding: 30px;
   max-width: 1200px;
   margin: auto;
 }
 
+/* INPUT */
 input, select {
   padding: 12px;
-  margin: 6px;
   border-radius: 10px;
   border: none;
+  margin: 5px;
+  background: #1c1c1c;
+  color: white;
 }
 
+/* ================= PRODUCTS ================= */
 .products {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 22px;
   margin-top: 25px;
 }
 
 .product {
-  background: #151515;
-  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 18px;
+  padding: 14px;
   text-align: center;
-  border: 1px solid #222;
   transition: 0.25s;
+  backdrop-filter: blur(8px);
 }
 
 .product:hover {
@@ -95,8 +95,10 @@ input, select {
 .product img {
   width: 100%;
   border-radius: 14px;
+  margin-bottom: 10px;
 }
 
+/* BUTTON */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
@@ -105,32 +107,25 @@ button {
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  margin-top: 8px;
+  transition: 0.2s;
 }
 
+button:hover {
+  transform: scale(1.05);
+}
+
+/* ================= CART ================= */
 #cart {
   margin-top: 30px;
-  background: #151515;
-  padding: 15px;
+  background: rgba(255,255,255,0.05);
+  padding: 18px;
   border-radius: 18px;
-  border: 1px solid #222;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
 }
 
-.qty-btn {
-  background: #333;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.small-btn {
-  background: red;
-  border: none;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
+li {
+  margin-bottom: 8px;
 }
 </style>
 
@@ -138,7 +133,7 @@ button {
 
 <body>
 
-<!-- ================= HEADER ================= -->
+<!-- HEADER -->
 <header>
   <div class="header-inner">
 
@@ -149,13 +144,13 @@ button {
 
     <div class="header-text">
       <div class="logo">Holzland Maradonas</div>
-      <div class="sub">Podcast Merch</div>
+      <div class="sub">Streetwear & Limited Drops</div>
     </div>
 
   </div>
 </header>
 
-<!-- ================= SHOP ================= -->
+<!-- SHOP -->
 <div class="container">
 
 <input id="name" placeholder="Dein Name">
@@ -201,7 +196,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================= PRODUKTE =================
+// ================= PRODUCTS =================
 const products = [
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
@@ -229,7 +224,7 @@ const products = [
 
 let cart = [];
 
-// ================= PRODUCTS =================
+// ================= RENDER =================
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -240,9 +235,9 @@ function displayProducts() {
 
     div.innerHTML = `
       <img src="${p.img}" onerror="this.style.display='none'">
-      <p><b>${p.name}</b></p>
+      <h3>${p.name}</h3>
       <p>${p.price} €</p>
-      <button onclick="addToCart('${p.name}', ${p.price})">Hinzufügen</button>
+      <button onclick="addToCart('${p.name}', ${p.price})">In den Warenkorb</button>
     `;
 
     container.appendChild(div);
@@ -253,22 +248,7 @@ function displayProducts() {
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
-  const existing = cart.find(i => i.name === name && i.size === size);
-
-  if (existing) existing.qty++;
-  else cart.push({ name, size, price, qty: 1 });
-
-  updateCart();
-}
-
-window.changeQty = function(index, value) {
-  cart[index].qty += value;
-  if (cart[index].qty <= 0) cart.splice(index, 1);
-  updateCart();
-}
-
-window.removeItem = function(index) {
-  cart.splice(index, 1);
+  cart.push({ name, size, price, qty: 1 });
   updateCart();
 }
 
@@ -278,17 +258,11 @@ function updateCart() {
 
   let total = 0;
 
-  cart.forEach((i, index) => {
-    total += i.price * i.qty;
+  cart.forEach(i => {
+    total += i.price;
 
     const li = document.createElement("li");
-    li.innerHTML = `
-      ${i.name} (${i.size}) - ${i.price} € x ${i.qty}
-      <button onclick="changeQty(${index}, -1)">-</button>
-      <button onclick="changeQty(${index}, 1)">+</button>
-      <button onclick="removeItem(${index})">❌</button>
-    `;
-
+    li.textContent = `${i.name} (${i.size}) - ${i.price} €`;
     list.appendChild(li);
   });
 
