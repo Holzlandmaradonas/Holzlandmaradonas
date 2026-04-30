@@ -12,24 +12,34 @@
 body {
   font-family: 'Poppins', sans-serif;
   margin: 0;
-  background: radial-gradient(circle at top, #1a1a1a, #0f0f0f);
+  background: #0f0f0f;
   color: white;
 }
 
 /* HEADER */
 header {
-  padding: 30px 20px;
+  padding: 25px;
   text-align: center;
   background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
   border-bottom: 1px solid #2a2a2a;
 }
 
+/* LOGO BILD */
+.logo-img {
+  height: 70px;
+  max-width: 90%;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+/* TITEL */
 .logo {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: 2px;
 }
 
+/* SUBTITLE */
 .sub {
   font-size: 13px;
   color: #aaa;
@@ -49,7 +59,6 @@ input, select {
   margin: 6px;
   border-radius: 10px;
   border: none;
-  outline: none;
 }
 
 /* PRODUCTS */
@@ -66,7 +75,7 @@ input, select {
   border-radius: 18px;
   text-align: center;
   border: 1px solid #222;
-  transition: 0.25s ease;
+  transition: 0.25s;
 }
 
 .product:hover {
@@ -77,14 +86,9 @@ input, select {
 .product img {
   width: 100%;
   border-radius: 14px;
-  transition: 0.3s;
 }
 
-.product:hover img {
-  transform: scale(1.03);
-}
-
-/* BUTTONS */
+/* BUTTON */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
@@ -94,54 +98,27 @@ button {
   cursor: pointer;
   font-weight: 600;
   margin-top: 8px;
-  transition: 0.2s;
-}
-
-button:hover {
-  transform: scale(1.05);
 }
 
 /* CART */
 #cart {
-  margin-top: 35px;
+  margin-top: 30px;
   background: #151515;
   padding: 15px;
   border-radius: 18px;
   border: 1px solid #222;
 }
-
-.cart-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #222;
-}
-
-.small-btn {
-  background: #ff3b3b;
-  border: none;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.qty-btn {
-  background: #333;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 0 2px;
-}
 </style>
 
 </head>
-
 <body>
 
+<!-- 🔥 HEADER MIT LOGO -->
 <header>
-  <div class="logo">🪵 Holzland Maradonas</div>
+  <img src="bilder/logo.png" class="logo-img" alt="Logo"
+       onerror="this.style.display='none'">
+
+  <div class="logo">Holzland Maradonas</div>
   <div class="sub">Streetwear & Drops</div>
 </header>
 
@@ -161,7 +138,7 @@ button:hover {
 
 <div id="cart">
 <h2>🛒 Warenkorb</h2>
-<div id="cartList"></div>
+<ul id="cartList"></ul>
 <h3 id="total">Gesamt: 0 €</h3>
 <button onclick="bestellen()">Bestellen</button>
 </div>
@@ -218,7 +195,7 @@ const products = [
 
 let cart = [];
 
-// 🧥 PRODUKTE
+// 📦 PRODUKTE
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -253,13 +230,13 @@ window.addToCart = function(name, price) {
   updateCart();
 }
 
-// ❌ REMOVE
+// 🛒 REMOVE
 window.removeItem = function(index) {
   cart.splice(index, 1);
   updateCart();
 }
 
-// ➕➖ QTY
+// ➕➖
 window.changeQty = function(index, value) {
   cart[index].qty += value;
 
@@ -270,7 +247,7 @@ window.changeQty = function(index, value) {
   updateCart();
 }
 
-// 🛒 UPDATE CART
+// 🔄 CART
 function updateCart() {
   const list = document.getElementById("cartList");
   list.innerHTML = "";
@@ -280,23 +257,15 @@ function updateCart() {
   cart.forEach((i, index) => {
     total += i.price * i.qty;
 
-    const div = document.createElement("div");
-    div.className = "cart-item";
-
-    div.innerHTML = `
-      <div>
-        ${i.name} (${i.size})<br>
-        ${i.price} € x ${i.qty}
-      </div>
-
-      <div>
-        <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
-        <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
-        <button class="small-btn" onclick="removeItem(${index})">❌</button>
-      </div>
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${i.name} (${i.size}) - ${i.price} € x ${i.qty}
+      <button onclick="changeQty(${index}, -1)">-</button>
+      <button onclick="changeQty(${index}, 1)">+</button>
+      <button onclick="removeItem(${index})">❌</button>
     `;
 
-    list.appendChild(div);
+    list.appendChild(li);
   });
 
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
@@ -306,8 +275,7 @@ function updateCart() {
 window.bestellen = async function() {
   const name = document.getElementById("name").value;
 
-  if (!name) return alert("Name fehlt!");
-  if (cart.length === 0) return alert("Warenkorb leer!");
+  if (!name || cart.length === 0) return alert("Fehler!");
 
   await addDoc(collection(db, "orders"), {
     name,
