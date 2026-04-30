@@ -12,92 +12,138 @@
 body {
   font-family: 'Poppins', sans-serif;
   margin: 0;
-  background: #0f0f0f;
+  background: radial-gradient(circle at top, #1a1a1a, #0f0f0f);
   color: white;
 }
 
+/* HEADER */
 header {
-  padding: 35px;
+  padding: 30px 20px;
   text-align: center;
-  font-size: 34px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #1f1f1f, #000);
+  background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
+  border-bottom: 1px solid #2a2a2a;
 }
 
+.logo {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.sub {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 5px;
+}
+
+/* CONTAINER */
 .container {
   padding: 25px;
   max-width: 1200px;
   margin: auto;
 }
 
+/* INPUTS */
 input, select {
   padding: 12px;
   margin: 6px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
+  outline: none;
 }
 
+/* PRODUCTS */
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
+  gap: 25px;
+  margin-top: 25px;
 }
 
 .product {
-  background: #1c1c1c;
-  padding: 15px;
-  border-radius: 16px;
+  background: #151515;
+  padding: 12px;
+  border-radius: 18px;
   text-align: center;
+  border: 1px solid #222;
+  transition: 0.25s ease;
+}
+
+.product:hover {
+  transform: translateY(-6px);
+  border-color: #00c853;
 }
 
 .product img {
   width: 100%;
-  border-radius: 12px;
+  border-radius: 14px;
+  transition: 0.3s;
 }
 
+.product:hover img {
+  transform: scale(1.03);
+}
+
+/* BUTTONS */
 button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
   color: white;
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
   cursor: pointer;
-  margin-top: 6px;
+  font-weight: 600;
+  margin-top: 8px;
+  transition: 0.2s;
 }
 
 button:hover {
   transform: scale(1.05);
 }
 
+/* CART */
 #cart {
-  margin-top: 30px;
-  background: #1c1c1c;
+  margin-top: 35px;
+  background: #151515;
   padding: 15px;
-  border-radius: 16px;
+  border-radius: 18px;
+  border: 1px solid #222;
 }
 
 .cart-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #222;
 }
 
 .small-btn {
-  background: red;
+  background: #ff3b3b;
   border: none;
   color: white;
   padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.qty-btn {
+  background: #333;
+  border: none;
+  padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
+  margin: 0 2px;
 }
 </style>
 
 </head>
+
 <body>
 
-<header>🪵 Holzland Maradonas</header>
+<header>
+  <div class="logo">🪵 Holzland Maradonas</div>
+  <div class="sub">Streetwear & Drops</div>
+</header>
 
 <div class="container">
 
@@ -146,7 +192,6 @@ const db = getFirestore(app);
 
 // 🧥 PRODUKTE
 const products = [
-
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
   {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.png"},
@@ -173,7 +218,7 @@ const products = [
 
 let cart = [];
 
-// 📦 PRODUKTE
+// 🧥 PRODUKTE
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -193,7 +238,7 @@ function displayProducts() {
   });
 }
 
-// 🛒 ADD (mit Menge)
+// 🛒 ADD
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
@@ -202,24 +247,19 @@ window.addToCart = function(name, price) {
   if (existing) {
     existing.qty++;
   } else {
-    cart.push({
-      name,
-      size,
-      price,
-      qty: 1
-    });
+    cart.push({ name, size, price, qty: 1 });
   }
 
   updateCart();
 }
 
-// 🛒 REMOVE ITEM
+// ❌ REMOVE
 window.removeItem = function(index) {
   cart.splice(index, 1);
   updateCart();
 }
 
-// ➕➖ UPDATE QTY
+// ➕➖ QTY
 window.changeQty = function(index, value) {
   cart[index].qty += value;
 
@@ -230,7 +270,7 @@ window.changeQty = function(index, value) {
   updateCart();
 }
 
-// 🔄 CART UPDATE
+// 🛒 UPDATE CART
 function updateCart() {
   const list = document.getElementById("cartList");
   list.innerHTML = "";
@@ -250,8 +290,8 @@ function updateCart() {
       </div>
 
       <div>
-        <button onclick="changeQty(${index}, -1)">-</button>
-        <button onclick="changeQty(${index}, 1)">+</button>
+        <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+        <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
         <button class="small-btn" onclick="removeItem(${index})">❌</button>
       </div>
     `;
