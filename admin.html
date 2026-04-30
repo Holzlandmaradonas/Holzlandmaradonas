@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Auswertung</title>
+</head>
+<body>
+
+<h1>📊 Bestellungen Übersicht</h1>
+<ul id="stats"></ul>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
+
+  authDomain: "onlineshop-maradonas.firebaseapp.com",
+
+  projectId: "onlineshop-maradonas",
+
+  storageBucket: "onlineshop-maradonas.firebasestorage.app",
+
+  messagingSenderId: "491142033512",
+
+  appId: "1:491142033512:web:f79e5db730349e9471cbdd"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const stats = {};
+
+const snapshot = await getDocs(collection(db, "orders"));
+
+snapshot.forEach(doc => {
+  const data = doc.data();
+
+  data.cart.forEach(item => {
+    stats[item] = (stats[item] || 0) + 1;
+  });
+});
+
+const list = document.getElementById("stats");
+
+for (let key in stats) {
+  const li = document.createElement("li");
+  li.textContent = key + ": " + stats[key] + "x";
+  list.appendChild(li);
+}
+</script>
+
+</body>
+</html>

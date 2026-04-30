@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Merch Shop</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #111;
+  color: white;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  background: black;
+}
+
+.container {
+  padding: 20px;
+}
+
+input, select, button {
+  padding: 10px;
+  margin: 5px;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.product {
+  background: #222;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.product img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+button {
+  background: #00c853;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+#cart {
+  margin-top: 20px;
+  background: #222;
+  padding: 10px;
+}
+</style>
+
+</head>
+<body>
+
+<header>🧥 Merch Shop</header>
+
+<div class="container">
+
+<input id="name" placeholder="Dein Name">
+
+<select id="size">
+<option>S</option>
+<option>M</option>
+<option>L</option>
+<option>XL</option>
+<option>XXL</option>
+</select>
+
+<div class="products" id="products"></div>
+
+<div id="cart">
+<h2>🛒 Warenkorb</h2>
+<ul id="cartList"></ul>
+<button onclick="bestellen()">Bestellen</button>
+</div>
+
+</div>
+
+<script type="module">
+
+// 🔥 HIER DEINE FIREBASE DATEN EINFÜGEN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
+
+  authDomain: "onlineshop-maradonas.firebaseapp.com",
+
+  projectId: "onlineshop-maradonas",
+
+  storageBucket: "onlineshop-maradonas.firebasestorage.app",
+
+  messagingSenderId: "491142033512",
+
+  appId: "1:491142033512:web:f79e5db730349e9471cbdd"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🧥 PRODUKTE
+const products = [
+  {name:"Hoodie Rot", img:"bilder/hoodie_rot.jpg"},
+  {name:"Hoodie Weinrot", img:"bilder/hoodie_weinrot.jpg"},
+  {name:"Hoodie Grün", img:"bilder/hoodie_gruen.jpg"},
+  {name:"Hoodie Schwarz", img:"bilder/hoodie_schwarz.jpg"},
+
+  {name:"T-Shirt Rot", img:"bilder/tshirt_rot.jpg"},
+  {name:"T-Shirt Weinrot", img:"bilder/tshirt_weinrot.jpg"},
+  {name:"T-Shirt Grün", img:"bilder/tshirt_gruen.jpg"},
+  {name:"T-Shirt Schwarz", img:"bilder/tshirt_schwarz.jpg"},
+
+  {name:"Mütze Rot", img:"bilder/muetze_rot.jpg"},
+  {name:"Mütze Weinrot", img:"bilder/muetze_weinrot.jpg"},
+  {name:"Mütze Grün", img:"bilder/muetze_gruen.jpg"},
+  {name:"Mütze Schwarz", img:"bilder/muetze_schwarz.jpg"}
+];
+
+let cart = [];
+
+// 📦 Produkte anzeigen
+function displayProducts() {
+  const container = document.getElementById("products");
+
+  products.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "product";
+    div.innerHTML = `
+      <img src="${p.img}">
+      <p>${p.name}</p>
+      <button onclick="addToCart('${p.name}')">Hinzufügen</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// 🛒 In Warenkorb
+window.addToCart = function(name) {
+  const size = document.getElementById("size").value;
+
+  const item = name.includes("Mütze")
+    ? name + " (Einheitsgröße)"
+    : name + " (" + size + ")";
+
+  cart.push(item);
+  updateCart();
+}
+
+// 🔄 Warenkorb anzeigen
+function updateCart() {
+  const list = document.getElementById("cartList");
+  list.innerHTML = "";
+
+  cart.forEach(i => {
+    const li = document.createElement("li");
+    li.textContent = i;
+    list.appendChild(li);
+  });
+}
+
+// 📤 Bestellung speichern
+window.bestellen = async function() {
+  const name = document.getElementById("name").value;
+
+  if (!name) {
+    alert("Name fehlt!");
+    return;
+  }
+
+  await addDoc(collection(db, "orders"), {
+    name: name,
+    cart: cart,
+    time: new Date()
+  });
+
+  alert("Bestellung gespeichert!");
+  cart = [];
+  updateCart();
+}
+
+// Start
+displayProducts();
+
+</script>
+
+</body>
+</html>
