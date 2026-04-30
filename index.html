@@ -22,7 +22,6 @@ header {
   font-size: 34px;
   font-weight: 700;
   background: linear-gradient(135deg, #1f1f1f, #000);
-  letter-spacing: 2px;
 }
 
 .container {
@@ -50,12 +49,6 @@ input, select {
   padding: 15px;
   border-radius: 16px;
   text-align: center;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-  transition: 0.2s;
-}
-
-.product:hover {
-  transform: translateY(-5px);
 }
 
 .product img {
@@ -67,11 +60,10 @@ button {
   background: linear-gradient(135deg, #00c853, #00a844);
   border: none;
   color: white;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: 600;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 button:hover {
@@ -83,6 +75,22 @@ button:hover {
   background: #1c1c1c;
   padding: 15px;
   border-radius: 16px;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.small-btn {
+  background: red;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 </style>
 
@@ -107,7 +115,7 @@ button:hover {
 
 <div id="cart">
 <h2>🛒 Warenkorb</h2>
-<ul id="cartList"></ul>
+<div id="cartList"></div>
 <h3 id="total">Gesamt: 0 €</h3>
 <button onclick="bestellen()">Bestellen</button>
 </div>
@@ -116,10 +124,7 @@ button:hover {
 
 <script type="module">
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getFirestore,
   collection,
@@ -139,33 +144,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🧥 PRODUKTE (PNG + JPG GEMISCHT BLEIBT!)
+// 🧥 PRODUKTE
 const products = [
 
-  // HOODIES (30 €)
   {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.png"},
   {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
   {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.png"},
   {name:"Hoodie Schwarz", price:30, img:"bilder/hoodie_schwarz.png"},
 
-  // PULLIS (25 €)
   {name:"Pulli Rot", price:25, img:"bilder/pulli_rot.png"},
   {name:"Pulli Weinrot", price:25, img:"bilder/pulli_weinrot.png"},
   {name:"Pulli Grün", price:25, img:"bilder/pulli_gruen.png"},
   {name:"Pulli Schwarz", price:25, img:"bilder/pulli_schwarz.png"},
 
-  // T-SHIRTS (20 €)
   {name:"T-Shirt Rot", price:20, img:"bilder/tshirt_rot.png"},
   {name:"T-Shirt Weinrot", price:20, img:"bilder/tshirt_weinrot.png"},
   {name:"T-Shirt Grün", price:20, img:"bilder/tshirt_gruen.png"},
   {name:"T-Shirt Schwarz", price:20, img:"bilder/tshirt_schwarz.png"},
 
-  // POLOS (20 €)
   {name:"Polo Rot", price:20, img:"bilder/polo_rot.png"},
   {name:"Polo Grün", price:20, img:"bilder/polo_gruen.png"},
   {name:"Polo Schwarz", price:20, img:"bilder/polo_schwarz.png"},
 
-  // MÜTZEN (10 €)
   {name:"Mütze Weinrot", price:10, img:"bilder/muetze_weinrot.png"},
   {name:"Mütze Grün", price:10, img:"bilder/muetze_gruen.png"},
   {name:"Mütze Schwarz", price:10, img:"bilder/muetze_schwarz.png"}
@@ -173,7 +173,7 @@ const products = [
 
 let cart = [];
 
-// 📦 PRODUKTE ANZEIGEN
+// 📦 PRODUKTE
 function displayProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -193,31 +193,70 @@ function displayProducts() {
   });
 }
 
-// 🛒 WARENKORB
+// 🛒 ADD (mit Menge)
 window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
-  const item = name.includes("Mütze")
-    ? { text: name + " (Einheitsgröße)", price }
-    : { text: name + " (" + size + ")", price };
+  const existing = cart.find(i => i.name === name && i.size === size);
 
-  cart.push(item);
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({
+      name,
+      size,
+      price,
+      qty: 1
+    });
+  }
+
   updateCart();
 }
 
-// 🔄 UPDATE CART
+// 🛒 REMOVE ITEM
+window.removeItem = function(index) {
+  cart.splice(index, 1);
+  updateCart();
+}
+
+// ➕➖ UPDATE QTY
+window.changeQty = function(index, value) {
+  cart[index].qty += value;
+
+  if (cart[index].qty <= 0) {
+    cart.splice(index, 1);
+  }
+
+  updateCart();
+}
+
+// 🔄 CART UPDATE
 function updateCart() {
   const list = document.getElementById("cartList");
   list.innerHTML = "";
 
   let total = 0;
 
-  cart.forEach(i => {
-    total += i.price;
+  cart.forEach((i, index) => {
+    total += i.price * i.qty;
 
-    const li = document.createElement("li");
-    li.textContent = `${i.text} - ${i.price} €`;
-    list.appendChild(li);
+    const div = document.createElement("div");
+    div.className = "cart-item";
+
+    div.innerHTML = `
+      <div>
+        ${i.name} (${i.size})<br>
+        ${i.price} € x ${i.qty}
+      </div>
+
+      <div>
+        <button onclick="changeQty(${index}, -1)">-</button>
+        <button onclick="changeQty(${index}, 1)">+</button>
+        <button class="small-btn" onclick="removeItem(${index})">❌</button>
+      </div>
+    `;
+
+    list.appendChild(div);
   });
 
   document.getElementById("total").textContent = "Gesamt: " + total + " €";
