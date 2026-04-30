@@ -89,49 +89,46 @@ button {
 
 <script type="module">
 
-// 🔥 HIER DEINE FIREBASE DATEN EINFÜGEN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
-
+const firebaseConfig = {
+  apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
   authDomain: "onlineshop-maradonas.firebaseapp.com",
-
   projectId: "onlineshop-maradonas",
-
   storageBucket: "onlineshop-maradonas.firebasestorage.app",
-
   messagingSenderId: "491142033512",
-
   appId: "1:491142033512:web:f79e5db730349e9471cbdd"
-
 };
 
-
- const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🧥 PRODUKTE
+// 🧥 PRODUKTE MIT PREISEN
 const products = [
-  {name:"Hoodie Rot", img:"bilder/hoodie_rot.jpg"},
-  {name:"Hoodie Weinrot", img:"bilder/hoodie_weinrot.jpg"},
-  {name:"Hoodie Grün", img:"bilder/hoodie_gruen.jpg"},
-  {name:"Hoodie Schwarz", img:"bilder/hoodie_schwarz.jpg"},
-  
-{ name:"Pulli Rot", img:"bilder/pulli_rot.jpg" },
-{ name:"Pulli Weinrot", img:"bilder/pulli_weinrot.jpg" },
-{ name:"Pulli Grün", img:"bilder/pulli_gruen.jpg" },
-{ name:"Pulli Schwarz", img:"bilder/pulli_schwarz.jpg" },
-  
-  {name:"T-Shirt Rot", img:"bilder/tshirt_rot.jpg"},
-  {name:"T-Shirt Weinrot", img:"bilder/tshirt_weinrot.jpg"},
-  {name:"T-Shirt Grün", img:"bilder/tshirt_gruen.jpg"},
-  {name:"T-Shirt Schwarz", img:"bilder/tshirt_schwarz.jpg"},
+  // Hoodies
+  {name:"Hoodie Rot", price:30, img:"bilder/hoodie_rot.jpg"},
+  {name:"Hoodie Weinrot", price:30, img:"bilder/hoodie_weinrot.jpg"},
+  {name:"Hoodie Grün", price:30, img:"bilder/hoodie_gruen.jpg"},
+  {name:"Hoodie Schwarz", price:30, img:"bilder/hoodie_schwarz.jpg"},
 
-  {name:"Mütze Rot", img:"bilder/muetze_rot.jpg"},
-  {name:"Mütze Weinrot", img:"bilder/muetze_weinrot.jpg"},
-  {name:"Mütze Grün", img:"bilder/muetze_gruen.jpg"},
-  {name:"Mütze Schwarz", img:"bilder/muetze_schwarz.jpg"}
+  // Pullis
+  {name:"Pulli Rot", price:30, img:"bilder/pulli_rot.jpg"},
+  {name:"Pulli Weinrot", price:30, img:"bilder/pulli_weinrot.jpg"},
+  {name:"Pulli Grün", price:30, img:"bilder/pulli_gruen.jpg"},
+  {name:"Pulli Schwarz", price:30, img:"bilder/pulli_schwarz.jpg"},
+
+  // T-Shirts
+  {name:"T-Shirt Rot", price:20, img:"bilder/tshirt_rot.jpg"},
+  {name:"T-Shirt Weinrot", price:20, img:"bilder/tshirt_weinrot.jpg"},
+  {name:"T-Shirt Grün", price:20, img:"bilder/tshirt_gruen.jpg"},
+  {name:"T-Shirt Schwarz", price:20, img:"bilder/tshirt_schwarz.jpg"},
+
+  // Mützen
+  {name:"Mütze Rot", price:10, img:"bilder/muetze_rot.jpg"},
+  {name:"Mütze Weinrot", price:10, img:"bilder/muetze_weinrot.jpg"},
+  {name:"Mütze Grün", price:10, img:"bilder/muetze_gruen.jpg"},
+  {name:"Mütze Schwarz", price:10, img:"bilder/muetze_schwarz.jpg"}
 ];
 
 let cart = [];
@@ -143,22 +140,25 @@ function displayProducts() {
   products.forEach(p => {
     const div = document.createElement("div");
     div.className = "product";
+
     div.innerHTML = `
       <img src="${p.img}">
       <p>${p.name}</p>
-      <button onclick="addToCart('${p.name}')">Hinzufügen</button>
+      <p><b>${p.price} €</b></p>
+      <button onclick="addToCart('${p.name}', ${p.price})">Hinzufügen</button>
     `;
+
     container.appendChild(div);
   });
 }
 
 // 🛒 In Warenkorb
-window.addToCart = function(name) {
+window.addToCart = function(name, price) {
   const size = document.getElementById("size").value;
 
   const item = name.includes("Mütze")
-    ? name + " (Einheitsgröße)"
-    : name + " (" + size + ")";
+    ? { text: name + " (Einheitsgröße)", price }
+    : { text: name + " (" + size + ")", price };
 
   cart.push(item);
   updateCart();
@@ -171,7 +171,7 @@ function updateCart() {
 
   cart.forEach(i => {
     const li = document.createElement("li");
-    li.textContent = i;
+    li.textContent = `${i.text} - ${i.price} €`;
     list.appendChild(li);
   });
 }
@@ -185,6 +185,11 @@ window.bestellen = async function() {
     return;
   }
 
+  if (cart.length === 0) {
+    alert("Warenkorb ist leer!");
+    return;
+  }
+
   await addDoc(collection(db, "orders"), {
     name: name,
     cart: cart,
@@ -192,6 +197,7 @@ window.bestellen = async function() {
   });
 
   alert("Bestellung gespeichert!");
+
   cart = [];
   updateCart();
 }
