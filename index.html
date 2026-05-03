@@ -287,9 +287,17 @@ window.removeItem = i=>{
 
 // ORDER
 window.bestellen = async function() {
-  const name = document.getElementById("name").value;
+  const name = document.getElementById("name").value.trim();
 
-  if (!name || cart.length === 0) return alert("Fehler!");
+  if (!name) {
+    alert("Bitte Namen eingeben!");
+    return;
+  }
+
+  if (cart.length === 0) {
+    alert("Warenkorb ist leer!");
+    return;
+  }
 
   await addDoc(collection(db, "orders"), {
     name,
