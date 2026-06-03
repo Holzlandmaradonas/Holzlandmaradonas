@@ -6,7 +6,7 @@
 
 <style>
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #0f0f0f;
   color: white;
   margin: 0;
@@ -20,12 +20,12 @@ header {
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: auto;
   padding: 20px;
 }
 
-.card, .stat {
+.card {
   background: #1c1c1c;
   padding: 15px;
   margin-bottom: 15px;
@@ -41,29 +41,57 @@ header {
 .item {
   display: flex;
   gap: 8px;
-  margin: 5px 0;
+  margin: 6px 0;
   flex-wrap: wrap;
 }
 
 button {
-  padding: 5px 10px;
+  padding: 6px 10px;
   border: none;
   cursor: pointer;
   border-radius: 6px;
 }
 
-.delete { background: red; }
-.save { background: #00c853; }
+.delete { background: red; color: white; }
+.save { background: #00c853; color: white; }
 
 input, select {
-  padding: 5px;
+  padding: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1c1c1c;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+th {
+  background: #111;
+  color: #00c853;
+}
+
+td:first-child, th:first-child {
+  text-align: left;
+}
+
+.total-row {
+  font-weight: bold;
+  background: #222;
 }
 </style>
 </head>
 
 <body>
 
-<header>📊 Admin Panel</header>
+<header>📊 Admin Panel - Holzland Maradonas</header>
 
 <div class="container" id="app">⏳ Lade...</div>
 
@@ -75,15 +103,20 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSy...",
+const firebaseConfig = {
+  apiKey: "AIzaSyCoLq0oP8U8Ag1qXHl_pr7oixDrAy7r8gQ",
   authDomain: "onlineshop-maradonas.firebaseapp.com",
-  projectId: "onlineshop-maradonas"
-});
+  projectId: "onlineshop-maradonas",
+  storageBucket: "onlineshop-maradonas.firebasestorage.app",
+  messagingSenderId: "491142033512",
+  appId: "1:491142033512:web:f79e5db730349e9471cbdd"
+};
 
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const container = document.getElementById("app");
@@ -91,118 +124,190 @@ const container = document.getElementById("app");
 let orders = [];
 let stats = {};
 
-// 📊 STATISTIK NEU BERECHNEN
+const sizes = ["S", "M", "L", "XL", "XXL", "Einheitsgröße"];
+
 function buildStats() {
   stats = {};
 
-  orders.forEach(o => {
-    o.cart.forEach(i => {
-      const key = `${i.name} (${i.size})`;
-      stats[key] = (stats[key] || 0) + Number(i.qty);
+  orders.forEach(order => {
+    order.cart.forEach(item => {
+      const name = item.name || item.text || "Unbekannt";
+      const size = item.size || "Einheitsgröße";
+      const qty = Number(item.qty || 1);
+
+      if (!stats[name]) stats[name] = {};
+      if (!stats[name][size]) stats[name][size] = 0;
+
+      stats[name][size] += qty;
     });
   });
 }
 
-// 📦 LADEN
 async function load() {
-  const snapshot = await getDocs(collection(db, "orders"));
+  try {
+    const snapshot = await getDocs(collection(db, "orders"));
 
-  orders = [];
+    orders = [];
 
-  snapshot.forEach(d => {
-    orders.push({
-      id: d.id,
-      ...d.data()
+    snapshot.forEach(d => {
+      orders.push({
+        id: d.id,
+        ...d.data()
+      });
     });
-  });
 
-  buildStats();
-  render();
+    buildStats();
+    render();
+
+  } catch (error) {
+    container.innerHTML = `
+      <h2>❌ Fehler beim Laden</h2>
+      <p>${error.message}</p>
+    `;
+  }
 }
 
-// 🔥 UI
 function render() {
   container.innerHTML = "";
 
-  // 📦 BESTELLUNGEN
-  const orderSection = document.createElement("div");
-  orderSection.innerHTML = "<h2>📦 Bestellungen</h2>";
+  renderOrders();
+  renderStats();
+}
 
-  orders.forEach((o, oi) => {
+function renderOrders() {
+  const section = document.createElement("div");
+  section.innerHTML = "<h2>📦 Bestellungen bearbeiten</h2>";
 
+  orders.forEach((order, orderIndex) => {
     const div = document.createElement("div");
     div.className = "card";
 
-    let html = `<div class="name">👤 ${o.name}</div>`;
+    let html = `
+      <div class="name">👤 Name:</div>
+      <input value="${order.name || ""}" onchange="editOrderName(${orderIndex}, this.value)">
+      <br><br>
+    `;
 
-    o.cart.forEach((i, ii) => {
+    order.cart.forEach((item, itemIndex) => {
       html += `
         <div class="item">
+          <input value="${item.name || item.text || ""}"
+            onchange="editItem(${orderIndex}, ${itemIndex}, 'name', this.value)">
 
-          <input value="${i.name}"
-            onchange="edit(${oi},${ii},'name',this.value)">
-
-          <select onchange="edit(${oi},${ii},'size',this.value)">
-            <option ${i.size=="S"?"selected":""}>S</option>
-            <option ${i.size=="M"?"selected":""}>M</option>
-            <option ${i.size=="L"?"selected":""}>L</option>
-            <option ${i.size=="XL"?"selected":""}>XL</option>
-            <option ${i.size=="XXL"?"selected":""}>XXL</option>
-            <option ${i.size=="Einheitsgröße"?"selected":""}>Einheitsgröße</option>
+          <select onchange="editItem(${orderIndex}, ${itemIndex}, 'size', this.value)">
+            ${sizes.map(s => `<option ${item.size === s ? "selected" : ""}>${s}</option>`).join("")}
           </select>
 
-          <input type="number" min="1" value="${i.qty}"
-            onchange="edit(${oi},${ii},'qty',this.value)">
+          <input type="number" min="1" value="${item.qty || 1}"
+            onchange="editItem(${orderIndex}, ${itemIndex}, 'qty', this.value)">
 
-          <button class="delete" onclick="removeItem(${oi},${ii})">❌</button>
+          <input type="number" min="0" value="${item.price || 0}"
+            onchange="editItem(${orderIndex}, ${itemIndex}, 'price', this.value)">
 
+          <button class="delete" onclick="removeItem(${orderIndex}, ${itemIndex})">Artikel löschen</button>
         </div>
       `;
     });
 
-    html += `<button class="save" onclick="save(${oi})">💾 Speichern</button>`;
+    html += `
+      <br>
+      <button class="save" onclick="saveOrder(${orderIndex})">💾 Bestellung speichern</button>
+      <button class="delete" onclick="deleteOrder(${orderIndex})">🗑️ Bestellung löschen</button>
+    `;
 
     div.innerHTML = html;
-    orderSection.appendChild(div);
+    section.appendChild(div);
   });
 
-  // 📊 STATISTIK
-  const statSection = document.createElement("div");
-  statSection.innerHTML = "<h2>📊 Statistik</h2>";
+  container.appendChild(section);
+}
 
-  Object.keys(stats).forEach(k => {
-    const div = document.createElement("div");
-    div.className = "stat";
-    div.textContent = `${k}: ${stats[k]}x`;
-    statSection.appendChild(div);
+function renderStats() {
+  const section = document.createElement("div");
+  section.innerHTML = "<h2>📊 Zusammenfassung nach Produkten</h2>";
+
+  let html = `
+    <table>
+      <tr>
+        <th>Produkt</th>
+        <th>S</th>
+        <th>M</th>
+        <th>L</th>
+        <th>XL</th>
+        <th>XXL</th>
+        <th>Einheitsgröße</th>
+        <th>Gesamt</th>
+      </tr>
+  `;
+
+  const sortedProducts = Object.keys(stats).sort();
+
+  sortedProducts.forEach(product => {
+    let total = 0;
+
+    const row = sizes.map(size => {
+      const amount = stats[product][size] || 0;
+      total += amount;
+      return `<td>${amount || ""}</td>`;
+    }).join("");
+
+    html += `
+      <tr>
+        <td><b>${product}</b></td>
+        ${row}
+        <td><b>${total}</b></td>
+      </tr>
+    `;
   });
 
-  container.appendChild(orderSection);
-  container.appendChild(statSection);
+  html += "</table>";
+
+  section.innerHTML += html;
+  container.appendChild(section);
 }
 
-// ✏️ EDIT
-window.edit = function(oi, ii, field, value) {
-  orders[oi].cart[ii][field] =
-    field === "qty" ? Number(value) : value;
+window.editOrderName = function(orderIndex, value) {
+  orders[orderIndex].name = value;
 }
 
-// ❌ DELETE ITEM
-window.removeItem = function(oi, ii) {
-  orders[oi].cart.splice(ii, 1);
+window.editItem = function(orderIndex, itemIndex, field, value) {
+  if (field === "qty" || field === "price") {
+    orders[orderIndex].cart[itemIndex][field] = Number(value);
+  } else {
+    orders[orderIndex].cart[itemIndex][field] = value;
+  }
+
   buildStats();
   render();
 }
 
-// 💾 SAVE
-window.save = async function(index) {
-  const ref = doc(db, "orders", orders[index].id);
+window.removeItem = function(orderIndex, itemIndex) {
+  orders[orderIndex].cart.splice(itemIndex, 1);
+  buildStats();
+  render();
+}
 
-  await updateDoc(ref, {
-    cart: orders[index].cart
+window.saveOrder = async function(orderIndex) {
+  const order = orders[orderIndex];
+
+  await updateDoc(doc(db, "orders", order.id), {
+    name: order.name,
+    cart: order.cart
   });
 
-  alert("Gespeichert!");
+  alert("Bestellung gespeichert!");
+}
+
+window.deleteOrder = async function(orderIndex) {
+  if (!confirm("Diese Bestellung wirklich löschen?")) return;
+
+  const order = orders[orderIndex];
+
+  await deleteDoc(doc(db, "orders", order.id));
+
+  orders.splice(orderIndex, 1);
+  buildStats();
+  render();
 }
 
 load();
