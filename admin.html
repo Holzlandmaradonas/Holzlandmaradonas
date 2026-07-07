@@ -482,7 +482,7 @@ window.exportOrdersCSV = function() {
   let csv = "Bestelldatum;Kunde;Produkt;Größe;Menge;Preis;Gesamt\n";
 
   orders.forEach(order => {
-    const orderDate = formatDate(order.time);
+    const orderDate = formatDateShort(order.time);
     const customer = order.name || "Ohne Name";
 
     order.cart.forEach(item => {
