@@ -42,7 +42,12 @@ header {
 .name {
   color: #00c853;
   font-weight: bold;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.date {
+  color: #aaa;
+  margin-bottom: 12px;
 }
 
 .item {
@@ -142,17 +147,55 @@ let stats = {};
 
 const sizes = ["S", "M", "L", "XL", "XXL", "Einheitsgröße"];
 
+function formatDate(time) {
+  if (!time) return "Kein Datum";
+
+  let date;
+
+  if (time.seconds) {
+    date = new Date(time.seconds * 1000);
+  } else {
+    date = new Date(time);
+  }
+
+  return date.toLocaleString("de-DE");
+}
+
+function formatDateShort(time) {
+  if (!time) return "Kein Datum";
+
+  let date;
+
+  if (time.seconds) {
+    date = new Date(time.seconds * 1000);
+  } else {
+    date = new Date(time);
+  }
+
+  return date.toLocaleDateString("de-DE");
+}
+
+function getTimeValue(time) {
+  if (!time) return 0;
+  if (time.seconds) return time.seconds * 1000;
+  return new Date(time).getTime();
+}
+
 function buildStats() {
   stats = {};
 
   orders.forEach(order => {
+    const orderDate = formatDateShort(order.time);
+
     order.cart.forEach(item => {
-      const name = item.name || item.text || "Unbekannt";
+      const product = item.name || item.text || "Unbekannt";
       const size = item.size || "Einheitsgröße";
       const qty = Number(item.qty || 1);
 
-      if (!stats[name]) stats[name] = {};
-      stats[name][size] = (stats[name][size] || 0) + qty;
+      const key = `${orderDate}|||${product}`;
+
+      if (!stats[key]) stats[key] = {};
+      stats[key][size] = (stats[key][size] || 0) + qty;
     });
   });
 }
@@ -169,6 +212,8 @@ async function load() {
         ...d.data()
       });
     });
+
+    orders.sort((a, b) => getTimeValue(b.time) - getTimeValue(a.time));
 
     buildStats();
     render();
@@ -190,7 +235,7 @@ function render() {
 function renderOrders() {
   const section = document.createElement("div");
   section.id = "ordersSection";
-  section.innerHTML = "<h2>📦 Einzelbestellungen bearbeiten</h2>";
+  section.innerHTML = "<h2>📦 Einzelbestellungen nach Datum</h2>";
 
   orders.forEach((order, orderIndex) => {
     const div = document.createElement("div");
@@ -199,7 +244,7 @@ function renderOrders() {
     let html = `
       <div class="name">👤 Name:</div>
       <input value="${order.name || ""}" onchange="editOrderName(${orderIndex}, this.value)">
-      <br><br>
+      <div class="date">🕒 Bestelldatum: ${formatDate(order.time)}</div>
     `;
 
     order.cart.forEach((item, itemIndex) => {
@@ -239,11 +284,12 @@ function renderOrders() {
 function renderStats() {
   const section = document.createElement("div");
   section.id = "summarySection";
-  section.innerHTML = "<h2>📊 Zusammenfassung nach Produkten</h2>";
+  section.innerHTML = "<h2>📊 Zusammenfassung nach Datum und Produkt</h2>";
 
   let html = `
     <table>
       <tr>
+        <th>Bestelldatum</th>
         <th>Produkt</th>
         <th>S</th>
         <th>M</th>
@@ -255,17 +301,19 @@ function renderStats() {
       </tr>
   `;
 
-  Object.keys(stats).sort().forEach(product => {
+  Object.keys(stats).sort().forEach(key => {
+    const [date, product] = key.split("|||");
     let total = 0;
 
     const row = sizes.map(size => {
-      const amount = stats[product][size] || 0;
+      const amount = stats[key][size] || 0;
       total += amount;
       return `<td>${amount || ""}</td>`;
     }).join("");
 
     html += `
       <tr>
+        <td>${date}</td>
         <td><b>${product}</b></td>
         ${row}
         <td><b>${total}</b></td>
@@ -328,12 +376,13 @@ window.printSummary = function() {
 }
 
 window.printOrders = function() {
-  let content = "<h2>📦 Einzelbestellungen</h2>";
+  let content = "<h2>📦 Einzelbestellungen nach Datum</h2>";
 
   orders.forEach(order => {
     content += `
       <div class="print-card">
         <h3>👤 ${order.name || "Ohne Name"}</h3>
+        <p><b>Bestelldatum:</b> ${formatDate(order.time)}</p>
         <ul>
     `;
 
@@ -369,24 +418,12 @@ function openPrintWindow(title, content) {
           color: black;
         }
 
-        h2 {
-          margin-top: 0;
-        }
-
         .print-card {
           border: 1px solid #999;
           padding: 12px;
           margin-bottom: 12px;
           border-radius: 8px;
           page-break-inside: avoid;
-        }
-
-        ul {
-          margin-top: 8px;
-        }
-
-        li {
-          margin-bottom: 4px;
         }
 
         table {
@@ -422,27 +459,30 @@ function openPrintWindow(title, content) {
 }
 
 window.exportSummaryCSV = function() {
-  let csv = "Produkt;S;M;L;XL;XXL;Einheitsgröße;Gesamt\n";
+  let csv = "Bestelldatum;Produkt;S;M;L;XL;XXL;Einheitsgröße;Gesamt\n";
 
-  Object.keys(stats).sort().forEach(product => {
+  Object.keys(stats).sort().forEach(key => {
+    const [date, product] = key.split("|||");
+
     let total = 0;
 
     const values = sizes.map(size => {
-      const amount = stats[product][size] || 0;
+      const amount = stats[key][size] || 0;
       total += amount;
       return amount;
     });
 
-    csv += `${product};${values.join(";")};${total}\n`;
+    csv += `${date};${product};${values.join(";")};${total}\n`;
   });
 
-  downloadCSV(csv, "holzland-maradonas-zusammenfassung.csv");
+  downloadCSV(csv, "holzland-maradonas-zusammenfassung-mit-datum.csv");
 }
 
 window.exportOrdersCSV = function() {
-  let csv = "Kunde;Produkt;Größe;Menge;Preis;Gesamt\n";
+  let csv = "Bestelldatum;Kunde;Produkt;Größe;Menge;Preis;Gesamt\n";
 
   orders.forEach(order => {
+    const orderDate = formatDate(order.time);
     const customer = order.name || "Ohne Name";
 
     order.cart.forEach(item => {
@@ -452,11 +492,11 @@ window.exportOrdersCSV = function() {
       const price = Number(item.price || 0);
       const total = qty * price;
 
-      csv += `${customer};${product};${size};${qty};${price};${total}\n`;
+      csv += `${orderDate};${customer};${product};${size};${qty};${price};${total}\n`;
     });
   });
 
-  downloadCSV(csv, "holzland-maradonas-einzelbestellungen.csv");
+  downloadCSV(csv, "holzland-maradonas-einzelbestellungen-mit-datum.csv");
 }
 
 function downloadCSV(csv, filename) {
